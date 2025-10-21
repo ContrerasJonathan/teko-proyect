@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargando detalles del terreno...</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
+    <style>
+        /* --- ESTILOS DEL ASISTENTE FLOTANTE --- */
+        #teko-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: flex-end;
+        }
+        .teko-icon-style {
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .teko-icon-style img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .teko-bubble-style {
+            position: relative;
+            background-color: #f8f9fa;
+            color: #212529;
+            padding: 10px 25px 10px 15px;
+            border-radius: 15px;
+            margin-right: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+            max-width: 200px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .teko-bubble-style p { margin: 0; font-size: 0.9rem; }
+        #close-bubble {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #6c757d;
+            cursor: pointer;
+            line-height: 1;
+        }
+        #close-bubble:hover { color: #000; }
+        .teko-window-style {
+            position: fixed;
+            bottom: 110px;
+            right: 20px;
+            width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            border: 1px solid #ddd;
+        }
+        .teko-window-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .teko-chat-body {
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        .teko-chat-message {
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        .teko-message-bot { background-color: #e9ecef; color: #000; align-self: flex-start; }
+        .teko-message-user { background-color: #0d6efd; color: white; margin-left: auto; }
+        .teko-chat-options { padding: 10px; border-top: 1px solid #ddd; background-color: #fff; }
+
+        /* --- ESTILOS DEL TUTORIAL GUIADO --- */
+        .teko-highlight {
+            position: absolute; border: 3px dashed #0d6efd; border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); z-index: 1050;
+            pointer-events: none; transition: all 0.3s ease-in-out;
+        }
+        .teko-dialog {
+            position: absolute; background-color: white; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); padding: 15px;
+            display: flex; align-items: center; gap: 15px; z-index: 1051;
+            max-width: 350px; transition: top 0.3s ease-in-out, left 0.3s ease-in-out;
+        }
+        .teko-dialog img {
+            width: 60px; height: 60px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+        }
+        .teko-dialog p { margin: 0 0 10px 0; font-size: 0.95rem; color: #333; }
+        .teko-dialog .dialog-buttons { display: flex; justify-content: space-between; }
+        .teko-dialog.hidden { display: none; }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="./inicio.html">
+                <img src="imagenes teko/logo superior teco.png" alt="Teko Logo" width="30" height="30" class="d-inline-block align-text-top"> Teko
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="./inicio.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./terrenos.html">Terrenos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./contacto.html">Contacto</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5" id="detalle-terreno-container">
+        <div id="loading-message" class="text-center"><h2>Cargando detalles del terreno...</h2><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>
+        </div>
+
+    <div id="teko-container">
+        <div id="teko-bubble" class="teko-bubble-style"><span id="close-bubble">×</span><p id="teko-message">¿Buscas tu terreno ideal?</p></div>
+        <div id="teko-icon" class="teko-icon-style"><img src="imagenes teko/ajolote.gif" alt="Asistente Teko"></div>
+    </div>
+    <div id="teko-window" class="teko-window-style d-none">
+        <div class="teko-window-header"><h5>Asistente Teko</h5><button id="close-teko" type="button" class="btn-close"></button></div>
+        <div id="teko-chat-body"></div>
+        <div id="teko-chat-options"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const tekoIcon = document.getElementById('teko-icon');
+        const tekoWindow = document.getElementById('teko-window');
+        const closeButton = document.getElementById('close-teko');
+        const chatBody = document.getElementById('teko-chat-body');
+        const chatOptions = document.getElementById('teko-chat-options');
+        const tekoBubble = document.getElementById('teko-bubble');
+        const tekoMessage = document.getElementById('teko-message');
+        const closeBubbleButton = document.getElementById('close-bubble');
+        let messageIndex = 0; let bubbleInterval; let bubbleVisible = true;
+        const messages = [ '¿Dudas sobre este terreno?', '¡Hazme clic para ayudarte!', '¿Agendamos una visita?', '¡Pregúntame cualquier duda!', ];
+        function cycleProactiveMessage() { if (!tekoWindow.classList.contains('d-none') || !bubbleVisible) { tekoBubble.style.opacity = '0'; return; } tekoMessage.textContent = messages[messageIndex]; tekoBubble.style.opacity = '1'; messageIndex = (messageIndex + 1) % messages.length; }
+        function startBubbleInterval() { bubbleVisible = true; clearInterval(bubbleInterval); setTimeout(cycleProactiveMessage, 1500); bubbleInterval = setInterval(cycleProactiveMessage, 5000); }
+        function addMessage(message, sender = 'bot') { const msgDiv = document.createElement('div'); msgDiv.className = `teko-chat-message teko-message-${sender}`; msgDiv.textContent = message; chatBody.appendChild(msgDiv); chatBody.scrollTop = chatBody.scrollHeight; }
+        function showOptions(options) { chatOptions.innerHTML = ''; options.forEach(option => { const btn = document.createElement('button'); btn.className = 'btn btn-outline-primary btn-sm m-1'; btn.textContent = option.text; btn.onclick = () => handleOptionClick(option); chatOptions.appendChild(btn); }); }
+        const initialOptions = [ { text: 'Agendar cita', action: 'schedule_appointment' }, { text: 'Dudas WhatsApp', action: 'open_whatsapp' }, { text: 'Ver todos', action: 'go_to_terrenos' } ];
+        function handleOptionClick(option) { if (option.action !== 'go_to_start') { addMessage(option.text, 'user'); } setTimeout(() => { switch (option.action) { case 'schedule_appointment': addMessage('¡Perfecto! Te llevo al formulario.'); setTimeout(() => window.location.href = 'contacto.html', 1500); break; case 'open_whatsapp': addMessage('Abriendo WhatsApp...'); window.open('https://wa.me/5216641234567', '_blank'); break; case 'go_to_terrenos': addMessage('Volvamos a la lista...'); setTimeout(() => window.location.href = 'terrenos.html', 1500); break; } }, 500); }
+        function startChat() {
+            tekoWindow.classList.remove('d-none'); tekoBubble.style.opacity = '0'; clearInterval(bubbleInterval); bubbleVisible = false; chatBody.innerHTML = '';
+            const userName = sessionStorage.getItem('tekoUserName'); // Usa sessionStorage
+            let welcomeMessage = '¡Hola! ¿Interesado en este terreno? ¿Cómo te ayudo?'; if (userName) { welcomeMessage = `¡Hola, ${userName}! ¿Interesado en este terreno? ¿Cómo te ayudo?`; }
+            addMessage(welcomeMessage); showOptions(initialOptions);
+        }
+        tekoIcon.addEventListener('click', startChat);
+        closeButton.addEventListener('click', () => { tekoWindow.classList.add('d-none'); startBubbleInterval(); });
+        closeBubbleButton.addEventListener('click', (e) => { e.stopPropagation(); bubbleVisible = false; tekoBubble.style.opacity = '0'; clearInterval(bubbleInterval); });
+        startBubbleInterval();
+    </script>
+
+    <script>
+        const container = document.getElementById('detalle-terreno-container');
+        const loadingMessage = document.getElementById('loading-message');
+
+        function crearCarrusel(terrenoId, imagenes) {
+            const carruselId = 'carruselTerreno'; // Asegura ID consistente
+            if (!imagenes || imagenes.length === 0) { return `<img src="https://via.placeholder.com/800x400" class="img-fluid rounded" alt="Sin imagen" id="${carruselId}">`; } // ID en fallback
+            let indicadores = ''; let diapositivas = '';
+            imagenes.forEach((imgUrl, index) => {
+                const esActiva = (index === 0) ? 'active' : '';
+                indicadores += `<button type="button" data-bs-target="#${carruselId}" data-bs-slide-to="${index}" class="${esActiva}" aria-current="${esActiva}" aria-label="Slide ${index + 1}"></button>`;
+                diapositivas += `<div class="carousel-item ${esActiva}"><img src="${imgUrl}" class="d-block w-100 rounded" alt="Foto ${index + 1} de ${terrenoId}"></div>`;
+            });
+            return `<div id="${carruselId}" class="carousel slide mb-4" data-bs-ride="carousel"><div class="carousel-indicators">${indicadores}</div><div class="carousel-inner">${diapositivas}</div><button class="carousel-control-prev" type="button" data-bs-target="#${carruselId}" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button><button class="carousel-control-next" type="button" data-bs-target="#${carruselId}" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button></div>`;
+        }
+
+        function popularPagina(terreno) {
+            document.title = `${terreno.nombre} - Teko`;
+            const htmlCarrusel = crearCarrusel(terreno.id, terreno.imagenes);
+            const htmlContenido = `
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <h2 id="terreno-nombre">${terreno.nombre}</h2>
+            <p class="lead" id="terreno-ubicacion">${terreno.ubicacion}</p>
+            ${htmlCarrusel} 
+            <div class="card p-3 mt-4" id="detalles-card"> 
+                <p><strong>Precio:</strong> <span id="terreno-precio">$${terreno.precio ? terreno.precio.toLocaleString('es-MX') : 'N/D'} MXN</span></p>
+
+                <p><strong>Área:</strong> <span id="terreno-area">${terreno.tamanio_m2 || 'N/D'} m²</span></p>
+
+                <p><strong>Servicios:</strong> <span id="terreno-servicios">${terreno.servicios || 'N/D'}</span></p>
+                
+                <p><strong>Descripción:</strong> <span id="terreno-descripcion">${terreno.descripcion || 'Sin descripción.'}</span></p>
+            </div>
+            <a href="./contacto.html" class="btn btn-primary mt-3">Agendar Visita</a>
+            <a href="#" id="btn-como-llegar" class="btn btn-outline-success mt-3"><i class="bi bi-compass-fill me-2"></i> Cómo Llegar</a>
+            <a href="#" id="btn-ver-3d" class="btn btn-outline-info mt-3"><i class="bi bi-globe me-2"></i> Ver en 3D</a>
+             </div>
+        </div>`;
+            loadingMessage.style.display = 'none';
+            container.innerHTML = htmlContenido;
+
+            const btnComoLlegar = document.getElementById('btn-como-llegar');
+            const btnVer3D = document.getElementById('btn-ver-3d');
+
+            // Listener Botón Cómo Llegar (Usa URLs oficiales)
+            btnComoLlegar.addEventListener('click', (e) => {
+                e.preventDefault(); if (!terreno.latitud || !terreno.longitud) { alert('Ubicación no disponible.'); return; }
+                if (navigator.geolocation) {
+                    btnComoLlegar.innerHTML = "Obteniendo ubicación...";
+                    navigator.geolocation.getCurrentPosition( (posicion) => { const userLat = posicion.coords.latitude; const userLon = posicion.coords.longitude; const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLon}&destination=${terreno.latitud},${terreno.longitud}`; window.open(url, '_blank'); btnComoLlegar.innerHTML = '<i class="bi bi-compass-fill me-2"></i> Cómo Llegar'; }, (error) => { console.warn("Error geo:", error.message); alert('No pudimos obtener tu ubicación. Por favor, acepta el permiso.'); btnComoLlegar.innerHTML = '<i class="bi bi-compass-fill me-2"></i> Cómo Llegar'; } );
+                } else { alert('Tu navegador no soporta geolocalización.'); }
+            });
+            // Listener Botón Ver 3D
+            btnVer3D.addEventListener('click', (e) => {
+                e.preventDefault(); if (!terreno.latitud || !terreno.longitud) { alert('Ubicación no disponible.'); return; }
+                const earthUrl = `https://earth.google.com/web/@${terreno.latitud},${terreno.longitud},150a,1000d,35y,0h,60t,0r/data=ClwaKhIZ!4m!1e1`; window.open(earthUrl, '_blank');
+            });
+
+             // ***** INICIAR TUTORIAL DESPUÉS DE RENDERIZAR *****
+             if (typeof startPageTutorial === 'function' && typeof detallesSteps !== 'undefined') {
+                // Pequeña espera para asegurar que todo esté en su lugar visualmente
+                setTimeout(() => {
+                    const carruselElem = document.getElementById('carruselTerreno');
+                    const detallesCardElem = document.getElementById('detalles-card');
+                    if (carruselElem && detallesCardElem) { // Verifica que ambos existan
+                       startPageTutorial('detallesTutorialDone_v2', detallesSteps);
+                    } else {
+                       console.warn("Tutorial detalles: Elementos clave (#carruselTerreno o #detalles-card) no encontrados al intentar iniciar.");
+                       // Marcar como hecho para no reintentar en esta sesión si falla la detección
+                       sessionStorage.setItem('detallesTutorialDone_v2', 'true');
+                    }
+                }, 500); // Espera 0.5 seg después de pintar el HTML
+             } else {
+                 console.warn("Función startPageTutorial o pasos (detallesSteps) no definidos al popular la página.");
+             }
+        }
+        async function cargarDetalleTerreno() {
+             try { const params = new URLSearchParams(window.location.search); let id = params.get('id'); if (!id) { id = 1; } const response = await fetch(`http://localhost:3000/api/terrenos/${id}`); if (!response.ok) { throw new Error(`Error al cargar terreno (ID: ${id})`); } const terreno = await response.json(); popularPagina(terreno); } catch (error) { console.error('Error:', error); loadingMessage.style.display = 'none'; container.innerHTML = `<h2 class="text-danger text-center">Error al cargar el terreno</h2><p class="text-center">${error.message}</p>`; }
+        }
+        document.addEventListener('DOMContentLoaded', cargarDetalleTerreno);
+    </script>
+
+    <script>
+        // --- Función Genérica startPageTutorial ---
+        const startPageTutorial = (storageKey, steps) => {
+            const tutorialCompleted = sessionStorage.getItem(storageKey);
+            if (tutorialCompleted || !steps || steps.length === 0) return;
+             if (document.querySelector('.teko-dialog')) { console.warn("Tutorial ya iniciado."); return; } // Prevenir duplicados
+
+            const dialog = document.createElement("div"); dialog.className = "teko-dialog hidden";
+            const tekoImg = document.createElement("img"); tekoImg.src = "imagenes teko/ajolote.gif"; tekoImg.alt = "Teko";
+            const textContainer = document.createElement("div"); const msg = document.createElement("p");
+            const btnContainer = document.createElement("div"); btnContainer.className = "dialog-buttons";
+            const nextBtn = document.createElement("button"); nextBtn.className = "btn btn-primary btn-sm";
+            const skipBtn = document.createElement("button"); skipBtn.className = "btn btn-secondary btn-sm"; skipBtn.textContent = "Saltar";
+            btnContainer.appendChild(skipBtn); btnContainer.appendChild(nextBtn);
+            textContainer.appendChild(msg); textContainer.appendChild(btnContainer);
+            dialog.appendChild(tekoImg); dialog.appendChild(textContainer); document.body.appendChild(dialog);
+            let currentStepIndex = 0; let currentHighlight = null;
+            const showStep = (index) => {
+                if (currentHighlight) { currentHighlight.remove(); currentHighlight = null; }
+                const step = steps[index]; if (!step) { endTutorial(); return; }
+                const target = document.querySelector(step.selector);
+                if (!target) { console.warn(`Tutorial: Elemento "${step.selector}" no encontrado.`); if (index > 0) setTimeout(() => showStep(index), 300); else { console.error("Error al iniciar tutorial detalles."); endTutorial(); } return; }
+                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                setTimeout(() => { // Espera scroll
+                    // Re-validar target por si desapareció
+                    if (!document.body.contains(target)) { console.warn("Target desaparecido durante scroll"); endTutorial(); return;}
+                    const rect = target.getBoundingClientRect();
+
+                    // Limpiar highlight viejo antes de añadir nuevo
+                    const oldHighlight = document.querySelector('.teko-highlight');
+                    if(oldHighlight) oldHighlight.remove();
+
+                    const highlight = document.createElement("div"); highlight.className = "teko-highlight";
+                    highlight.style.top = `${rect.top + window.scrollY - 5}px`; highlight.style.left = `${rect.left + window.scrollX - 5}px`; highlight.style.width = `${rect.width + 10}px`; highlight.style.height = `${rect.height + 10}px`;
+                    document.body.appendChild(highlight); currentHighlight = highlight;
+
+                    msg.textContent = step.message; nextBtn.textContent = index === steps.length - 1 ? "¡Entendido!" : "Siguiente";
+                    let dialogTop = rect.bottom + window.scrollY + 10; let dialogLeft = rect.left + window.scrollX;
+                    if (dialogLeft + 350 > window.innerWidth) dialogLeft = window.innerWidth - 360;
+                    const dialogHeight = dialog.offsetHeight || 100; if (dialogTop + dialogHeight > window.innerHeight + window.scrollY) dialogTop = rect.top + window.scrollY - dialogHeight - 10;
+                    dialog.style.top = `${dialogTop}px`; dialog.style.left = `${dialogLeft}px`; dialog.classList.remove('hidden');
+                }, 350); // Tiempo para el scroll
+            };
+            const endTutorial = () => { const dlg = document.querySelector('.teko-dialog'); if (dlg) dlg.remove(); const hlt = document.querySelector('.teko-highlight'); if (hlt) hlt.remove(); sessionStorage.setItem(storageKey, 'true'); };
+            nextBtn.addEventListener("click", () => { currentStepIndex++; showStep(currentStepIndex); }); skipBtn.addEventListener("click", endTutorial);
+            // Iniciar el primer paso (se llama desde popularPagina)
+             showStep(0);
+        };
+
+        // --- PASOS ESPECÍFICOS PARA detalles.html ---
+        const detallesSteps = [
+            { selector: '#carruselTerreno', message: 'Mira las fotos del terreno deslizando aquí.' },
+            { selector: '#detalles-card', message: 'Aquí están los detalles importantes: precio, tamaño, etc.' },
+            { selector: '#btn-como-llegar', message: '¿Te gustó? Haz clic aquí para ver la ruta en Google Maps desde tu ubicación.' },
+            { selector: '#btn-ver-3d', message: 'O explora los alrededores con esta vista 3D de Google Earth.' }
+        ];
+
+        // NOTA: La llamada a startPageTutorial se hace desde popularPagina
+    </script>
+
+</body>
+</html>

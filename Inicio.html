@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Teko</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Estilo para centrar todo */
+        body, html {
+            height: 100%;
+        }
+        .main-container {
+            min-height: 100vh; /* Usa min-height para asegurar que cubra la pantalla */
+            padding-top: 80px; /* Espacio para el navbar fijo */
+            padding-bottom: 20px;
+        }
+
+        /* --- ESTILOS DEL TUTORIAL GUIADO --- */
+        .teko-highlight {
+            position: absolute;
+            border: 3px dashed #0d6efd; /* Azul Bootstrap */
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* Sombra exterior para oscurecer */
+            z-index: 1050; /* Encima de la mayoría de los elementos */
+            pointer-events: none; /* Permite hacer clic a través del resaltado */
+            transition: all 0.3s ease-in-out;
+        }
+        .teko-dialog {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: flex; /* Para poner imagen y texto lado a lado */
+            align-items: center;
+            gap: 15px; /* Espacio entre imagen y texto */
+            z-index: 1051; /* Encima del resaltado */
+            max-width: 350px; /* Ancho máximo del diálogo */
+            transition: top 0.3s ease-in-out, left 0.3s ease-in-out;
+        }
+        .teko-dialog img {
+            width: 60px; /* Tamaño del GIF */
+            height: 60px;
+            border-radius: 50%; /* Hacerlo redondo */
+            object-fit: cover;
+            flex-shrink: 0; /* Evita que la imagen se encoja */
+        }
+        .teko-dialog p {
+            margin: 0 0 10px 0; /* Espacio debajo del mensaje */
+            font-size: 0.95rem;
+            color: #333;
+        }
+        .teko-dialog .dialog-buttons {
+            display: flex;
+            justify-content: space-between; /* Botones a los extremos */
+        }
+        .teko-dialog.hidden { display: none; } /* Ocultar inicialmente */
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="./inicio.html">
+                <img src="imagenes teko/logo superior teco.png" alt="Teko Logo" width="30" height="30" class="d-inline-block align-text-top">
+                Teko
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="./inicio.html">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="./terrenos.html">Terrenos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="./contacto.html">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container d-flex flex-column justify-content-center align-items-center main-container">
+
+        <img src="imagenes teko/ajolote.gif" alt="Asistente Teko" id="teko-mascot" style="width: 150px; border-radius: 50%; margin-bottom: 20px;">
+
+        <h1 class="display-4">¡Hola! Soy Teko</h1>
+        <p class="lead text-center mb-4" id="teko-subtitle">Estoy aquí para ayudarte a encontrar el terreno de tus sueños.</p>
+
+        <div id="teko-wizard" class="text-center" style="width: 100%; max-width: 500px;">
+            </div>
+
+        <div id="camino-alterno" class="text-center mt-4" style="display: none;">
+            <p>O si prefieres...</p>
+            <button id="btn-cerca-mi" class="btn btn-outline-success btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-geo-alt-fill me-2" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+                Mostrar Terrenos Cerca de Mí
+            </button>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const wizardContainer = document.getElementById('teko-wizard');
+        const botonCercaMi = document.getElementById('btn-cerca-mi');
+        const caminoAlterno = document.getElementById('camino-alterno');
+        const subtituloTeko = document.getElementById('teko-subtitle');
+
+        let searchCriteria = { precio: null, zona: null };
+
+        function renderWizard(step) {
+            wizardContainer.innerHTML = '';
+            if (step === 'start') {
+                 subtituloTeko.innerHTML = 'Para empezar, ¿cómo debería llamarte?';
+                 wizardContainer.innerHTML = `
+                    <div class="input-group mb-3">
+                        <input type="text" id="userNameInput" class="form-control form-control-lg" placeholder="Escribe tu primer nombre...">
+                        <button class="btn btn-primary" type="button" onclick="setAnswer('name', null)">¡Listo!</button>
+                    </div>
+                    <a href="#" class="text-muted small" onclick="skipNameStep()">Prefiero no decirlo</a>
+                `;
+            }
+            if (step === 'main_options') {
+                caminoAlterno.style.display = 'block';
+                const userName = sessionStorage.getItem('tekoUserName');
+                let welcome = '¡Perfecto! ¿Qué hacemos?';
+                if (userName) welcome = `¡Gusto en conocerte, ${userName}! ¿Qué hacemos?`;
+                subtituloTeko.innerHTML = welcome;
+
+                wizardContainer.innerHTML = `
+                    <button class="btn btn-primary btn-lg w-100 mb-2" id="btn-tutorial-cuestionario" onclick="renderWizard('budget')">
+                        ¡Ayúdame a buscar! (Cuestionario)
+                    </button>
+                    <a href="./terrenos.html" class="btn btn-secondary btn-lg w-100" id="btn-tutorial-ver-todos">
+                        Solo quiero ver todos los terrenos
+                    </a>
+                `;
+
+                 // ***** LLAMA AL TUTORIAL AQUÍ *****
+                 // Verifica si la función existe antes de llamarla (definida en el siguiente script)
+                 if (typeof startPageTutorial === 'function' && typeof inicioBotonesSteps !== 'undefined') {
+                    startPageTutorial('inicioBotonesTutorial_v1', inicioBotonesSteps);
+                 } else {
+                     console.warn("Función startPageTutorial o pasos no definidos al renderizar main_options");
+                 }
+
+
+                 if(!document.getElementById('btn-cerca-mi')){
+                    console.error("Botón 'Cerca de Mí' no encontrado al renderizar main_options");
+                 }
+            }
+            if (step === 'budget') {
+                caminoAlterno.style.display = 'none';
+                subtituloTeko.innerHTML = '¡Genial! ¿Cuál es tu presupuesto máximo?';
+                wizardContainer.innerHTML = `
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">$</span>
+                        <input type="number" id="customBudgetInput" class="form-control form-control-lg" placeholder="Escribe tu monto exacto...">
+                        <button class="btn btn-primary" type="button" onclick="submitCustomBudget()">Usar este monto</button>
+                    </div>
+                    <p class="text-muted">O si prefieres, elige un rango:</p>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('budget', 200000)">Menos de $200,000</button>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('budget', 500000)">Menos de $500,000</button>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('budget', 1000000)">Hasta $1,000,000</button>
+                `;
+            }
+            if (step === 'zone') {
+                subtituloTeko.innerHTML = '¡Entendido! ¿En qué zona buscas?';
+                wizardContainer.innerHTML = `
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('zone', 'Tijuana')">Tijuana</button>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('zone', 'Rosarito')">Rosarito</button>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('zone', 'Tecate')">Tecate</button>
+                    <button class="btn btn-outline-primary btn-lg w-100 mb-2" onclick="setAnswer('zone', 'Cualquiera')">Cualquier zona</button>
+                `;
+            }
+        }
+        function submitCustomBudget() {
+             const input = document.getElementById('customBudgetInput');
+             const value = parseInt(input.value);
+             if (!value || value <= 0) { alert('Por favor, ingresa un monto válido.'); return; }
+             setAnswer('budget', value);
+        }
+        function setAnswer(key, value) {
+            if (key === 'name') {
+                const input = document.getElementById('userNameInput');
+                const name = input.value;
+                if (!name) { alert('Por favor, escribe tu nombre'); return; }
+                sessionStorage.setItem('tekoUserName', name);
+                renderWizard('main_options');
+            }
+            else if (key === 'budget') { searchCriteria.precio = value; renderWizard('zone'); }
+            else if (key === 'zone') { searchCriteria.zona = value; redirectToResults(); }
+        }
+        function skipNameStep() { renderWizard('main_options'); }
+        function redirectToResults() {
+             subtituloTeko.innerHTML = '¡Perfecto!';
+             wizardContainer.innerHTML = '<p class="h5">Buscando los mejores terrenos para ti...</p>';
+             const url = `./terrenos.html?precio_max=${searchCriteria.precio || ''}&zona=${searchCriteria.zona || ''}`;
+             setTimeout(() => { window.location.href = url; }, 1500);
+        }
+        botonCercaMi.addEventListener('click', () => { window.location.href = './terrenos.html?cerca=true'; });
+
+        const userName = sessionStorage.getItem('tekoUserName');
+        if (userName) { renderWizard('main_options'); }
+        else { renderWizard('start'); }
+    </script>
+
+    <script>
+        // Función principal para iniciar el tutorial de una página
+        function startPageTutorial(storageKey, steps) {
+            const tutorialCompleted = sessionStorage.getItem(storageKey);
+            // Ya no necesita la validación del nombre aquí, se llama en el momento correcto
+            if (tutorialCompleted || !steps || steps.length === 0) {
+                return;
+            }
+
+            // --- Crear elementos del diálogo UNA SOLA VEZ ---
+            const dialog = document.createElement("div");
+            dialog.className = "teko-dialog hidden"; // Empezar oculto
+
+            const tekoImg = document.createElement("img");
+            tekoImg.src = "imagenes teko/ajolote.gif"; // TU GIF
+            tekoImg.alt = "Teko";
+
+            const textContainer = document.createElement("div");
+            const msg = document.createElement("p");
+            const btnContainer = document.createElement("div");
+            btnContainer.className = "dialog-buttons";
+
+            const nextBtn = document.createElement("button");
+            nextBtn.className = "btn btn-primary btn-sm";
+            const skipBtn = document.createElement("button");
+            skipBtn.className = "btn btn-secondary btn-sm";
+            skipBtn.textContent = "Saltar";
+
+            btnContainer.appendChild(skipBtn);
+            btnContainer.appendChild(nextBtn);
+            textContainer.appendChild(msg);
+            textContainer.appendChild(btnContainer);
+
+            dialog.appendChild(tekoImg);
+            dialog.appendChild(textContainer);
+            document.body.appendChild(dialog);
+
+            let currentStepIndex = 0;
+            let currentHighlight = null;
+
+            // --- Función para mostrar un paso ---
+            function showStep(index) {
+                if (currentHighlight) { currentHighlight.remove(); currentHighlight = null; }
+
+                const step = steps[index];
+                if (!step) { endTutorial(); return; }
+
+                const target = document.querySelector(step.selector);
+                if (!target) {
+                     console.warn(`Tutorial: Elemento "${step.selector}" no encontrado. Reintentando...`);
+                     if (index > 0) {
+                        setTimeout(() => showStep(index), 300);
+                     } else {
+                         console.error("Error al iniciar tutorial: Elemento del primer paso no encontrado.");
+                         endTutorial();
+                     }
+                     return;
+                }
+
+                const rect = target.getBoundingClientRect();
+                const highlight = document.createElement("div");
+                highlight.className = "teko-highlight";
+                highlight.style.top = `${rect.top + window.scrollY - 5}px`;
+                highlight.style.left = `${rect.left + window.scrollX - 5}px`;
+                highlight.style.width = `${rect.width + 10}px`;
+                highlight.style.height = `${rect.height + 10}px`;
+                document.body.appendChild(highlight);
+                currentHighlight = highlight;
+
+                msg.textContent = step.message;
+                nextBtn.textContent = index === steps.length - 1 ? "¡Entendido!" : "Siguiente";
+
+                let dialogTop = rect.bottom + window.scrollY + 10;
+                let dialogLeft = rect.left + window.scrollX;
+                if (dialogLeft + 350 > window.innerWidth) dialogLeft = window.innerWidth - 360;
+                const dialogHeight = dialog.offsetHeight || 100;
+                if (dialogTop + dialogHeight > window.innerHeight + window.scrollY) {
+                   dialogTop = rect.top + window.scrollY - dialogHeight - 10;
+                }
+
+                dialog.style.top = `${dialogTop}px`;
+                dialog.style.left = `${dialogLeft}px`;
+                dialog.classList.remove('hidden');
+
+            }
+
+            // --- Función para terminar el tutorial ---
+            function endTutorial() {
+                const dlg = document.querySelector('.teko-dialog');
+                if (dlg) dlg.remove();
+                const hlt = document.querySelector('.teko-highlight');
+                if (hlt) hlt.remove();
+                sessionStorage.setItem(storageKey, 'true');
+            }
+
+            // --- Event listeners para los botones ---
+            nextBtn.addEventListener("click", () => { currentStepIndex++; showStep(currentStepIndex); });
+            skipBtn.addEventListener("click", endTutorial);
+
+            // --- Iniciar el primer paso ---
+            // Ya no se necesita el setTimeout aquí porque se llama DESPUÉS de renderizar
+            showStep(0);
+        }
+
+
+        // --- PASOS ESPECÍFICOS PARA los botones de inicio.html ---
+        // Definir los pasos aquí para que estén disponibles globalmente en este script
+        const inicioBotonesSteps = [
+            { selector: '#btn-tutorial-cuestionario', message: 'Haz clic aquí si quieres que te ayude a encontrar tu terreno ideal con unas preguntas rápidas.' },
+            { selector: '#btn-tutorial-ver-todos', message: 'O usa este botón si prefieres explorar directamente todos los terrenos disponibles.' },
+            { selector: '#btn-cerca-mi', message: '¡También puedes usar este para ver los terrenos ordenados por cercanía a tu ubicación actual!' }
+        ];
+
+        // NOTA: La llamada a startPageTutorial se hace ahora desde la función renderWizard
+        // en el script anterior cuando step === 'main_options'.
+
+    </script>
+
+</body>
+</html>

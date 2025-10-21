@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestros Terrenos - Teko</title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+
     <style>
-        /* Estilos para el contenedor, ícono, burbuja y ventana de Teko */
+        /* --- ESTILOS DEL ASISTENTE FLOTANTE --- */
         #teko-container {
             position: fixed;
             bottom: 20px;
@@ -18,33 +21,51 @@
             align-items: flex-end;
         }
         .teko-icon-style {
-            background-color: #0d6efd;
-            border-radius: 50%;
-            padding: 15px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1001; /* Encima de la burbuja */
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .teko-icon-style img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ajusta el GIF al círculo */
         }
         .teko-bubble-style {
+            position: relative; /* Necesario para el botón de cerrar */
             background-color: #f8f9fa;
             color: #212529;
-            padding: 10px 15px;
+            padding: 10px 25px 10px 15px; /* Espacio extra a la derecha para la X */
             border-radius: 15px;
             margin-right: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
             max-width: 200px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
         }
-        .teko-bubble-style p {
-            margin: 0;
-            font-size: 0.9rem;
+        .teko-bubble-style p { margin: 0; font-size: 0.9rem; }
+        #close-bubble {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #6c757d;
+            cursor: pointer;
+            line-height: 1;
         }
+        #close-bubble:hover { color: #000; }
         .teko-window-style {
             position: fixed;
-            bottom: 100px;
+            bottom: 110px; /* Ajustado para el ícono de 80px */
             right: 20px;
             width: 300px;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             border: 1px solid #ddd;
         }
@@ -58,9 +79,55 @@
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
         }
-        .teko-window-body {
+        .teko-chat-body {
             padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
         }
+        .teko-chat-message {
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        .teko-message-bot { background-color: #e9ecef; color: #000; align-self: flex-start; }
+        .teko-message-user { background-color: #0d6efd; color: white; margin-left: auto; }
+        .teko-chat-options { padding: 10px; border-top: 1px solid #ddd; background-color: #fff; }
+
+        /* --- ESTILOS DEL TUTORIAL GUIADO --- */
+        .teko-highlight {
+            position: absolute;
+            border: 3px dashed #0d6efd; /* Azul Bootstrap */
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* Sombra exterior para oscurecer */
+            z-index: 1050; /* Encima de la mayoría de los elementos */
+            pointer-events: none; /* Permite hacer clic a través del resaltado */
+            transition: all 0.3s ease-in-out;
+        }
+        .teko-dialog {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: flex; /* Para poner imagen y texto lado a lado */
+            align-items: center;
+            gap: 15px; /* Espacio entre imagen y texto */
+            z-index: 1051; /* Encima del resaltado */
+            max-width: 350px; /* Ancho máximo del diálogo */
+            transition: top 0.3s ease-in-out, left 0.3s ease-in-out;
+        }
+        .teko-dialog img {
+            width: 60px; /* Tamaño del GIF */
+            height: 60px;
+            border-radius: 50%; /* Hacerlo redondo */
+            object-fit: cover;
+            flex-shrink: 0; /* Evita que la imagen se encoja */
+        }
+        .teko-dialog p { margin: 0 0 10px 0; font-size: 0.95rem; color: #333; }
+        .teko-dialog .dialog-buttons { display: flex; justify-content: space-between; }
+        .teko-dialog.hidden { display: none; }
     </style>
 </head>
 
@@ -68,16 +135,14 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="./index.html">
-                <img src="C:\Users\WINDOWS\Desktop\Teko-Proyecto\imagenes teko\logo superior teco.png" alt="Teko Logo" width="30" height="30"> Teko
+            <a class="navbar-brand" href="./inicio.html">
+                <img src="imagenes teko/logo superior teco.png" alt="Teko Logo" width="30" height="30" class="d-inline-block align-text-top"> Teko
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="./index.html">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="./terrenos.html">Terrenos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./inicio.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="./terrenos.html">Terrenos</a></li>
                     <li class="nav-item"><a class="nav-link" href="./contacto.html">Contacto</a></li>
                 </ul>
             </div>
@@ -86,57 +151,249 @@
 
     <div class="container mt-5">
         <h1 class="mb-4">Terrenos Disponibles</h1>
-
         <div class="d-grid gap-2 col-md-6 mx-auto mb-5 text-center">
-            <button class="btn btn-success btn-lg" type="button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-geo-alt-fill me-2" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-                Mostrar Terrenos Cerca de Mí
-            </button>
+            <button class="btn btn-success btn-lg" type="button" id="btn-cerca-mi"><i class="bi bi-geo-alt-fill me-2"></i> Mostrar Terrenos Cerca de Mí</button>
+            <button class="btn btn-primary btn-lg" type="button" id="btn-dar-alta"><i class="bi bi-plus-circle-fill me-2"></i> Dar de Alta Terreno</button>
         </div>
-
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            <div class="col">
-                <div class="card h-100"><img src="https://via.placeholder.com/400x250" class="card-img-top"><div class="card-body"><h5 class="card-title">Teko Norte</h5><p class="card-text">Ubicación: Tijuana, BC</p><p class="card-text"><strong>Precio:</strong> $320,000 MXN</p><a href="./index.html" class="btn btn-primary">Ver Detalles</a></div></div>
+        <div class="row mb-4 p-3 bg-light rounded border"> <div class="col-md-8"><label for="searchInput" class="form-label">Buscar por nombre o zona</label><input type="text" id="searchInput" class="form-control" placeholder="Ej: Teko Norte o Tijuana..."></div>
+            <div class="col-md-4"><label for="priceFilter" class="form-label">Filtrar por precio</label>
+                <select id="priceFilter" class="form-select">
+                    <option value="">Todos los precios</option>
+                    <option value="200000">Menos de $200,000</option>
+                    <option value="300000">Menos de $300,000</option>
+                    <option value="500000">Menos de $500,000</option>
+                    <option value="1000000">Menos de $1,000,000</option>
+                </select>
             </div>
-            <div class="col">
-                <div class="card h-100"><img src="https://via.placeholder.com/400x250" class="card-img-top"><div class="card-body"><h5 class="card-title">Teko Sur</h5><p class="card-text">Ubicación: Rosarito, BC</p><p class="card-text"><strong>Precio:</strong> $250,000 MXN</p><a href="#" class="btn btn-primary">Ver Detalles</a></div></div>
-            </div>
-            <div class="col">
-                <div class="card h-100"><img src="https://via.placeholder.com/400x250" class="card-img-top"><div class="card-body"><h5 class="card-title">Teko Este</h5><p class="card-text">Ubicación: Tecate, BC</p><p class="card-text"><strong>Precio:</strong> $180,000 MXN</p><a href="#" class="btn btn-primary">Ver Detalles</a></div></div>
-            </div>
+        </div>
+        <div id="lista-terrenos-container" class="row row-cols-1 row-cols-md-3 g-4"> <p class="text-center col-12">Cargando terrenos...</p>
         </div>
     </div>
 
     <div id="teko-container">
-        <div id="teko-bubble" class="teko-bubble-style">
-            <p id="teko-message">¡Hola! ¿Buscas tu terreno ideal?</p>
-        </div>
-        <div id="teko-icon" class="teko-icon-style">
-            <img src="https://i.imgur.com/g82695V.png" alt="Asistente Teko" width="40">
-        </div>
+        <div id="teko-bubble" class="teko-bubble-style"><span id="close-bubble">×</span><p id="teko-message">¿Buscas tu terreno ideal?</p></div>
+        <div id="teko-icon" class="teko-icon-style"><img src="imagenes teko/ajolote.gif" alt="Asistente Teko"></div>
+    </div>
+    <div id="teko-window" class="teko-window-style d-none">
+        <div class="teko-window-header"><h5>Asistente Teko</h5><button id="close-teko" type="button" class="btn-close"></button></div>
+        <div id="teko-chat-body"></div>
+        <div id="teko-chat-options"></div>
     </div>
 
-    <div id="teko-window" class="teko-window-style d-none">
-        <div class="teko-window-header">
-            <h5>Asistente Teko</h5>
-            <button id="close-teko" type="button" class="btn-close"></button>
-        </div>
-        <div class="teko-window-body">
-            <p>¿En qué te puedo ayudar?</p>
-            <button class="btn btn-light w-100">Ver terrenos por zona</button>
-        </div>
-    </div>
-    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // Script para hacer que Teko sea interactivo
         const tekoIcon = document.getElementById('teko-icon');
         const tekoWindow = document.getElementById('teko-window');
         const closeButton = document.getElementById('close-teko');
-        function toggleTekoWindow() { tekoWindow.classList.toggle('d-none'); }
-        tekoIcon.addEventListener('click', toggleTekoWindow);
-        closeButton.addEventListener('click', toggleTekoWindow);
+        const chatBody = document.getElementById('teko-chat-body');
+        const chatOptions = document.getElementById('teko-chat-options');
+        const tekoBubble = document.getElementById('teko-bubble');
+        const tekoMessage = document.getElementById('teko-message');
+        const closeBubbleButton = document.getElementById('close-bubble');
+        let messageIndex = 0; let bubbleInterval; let bubbleVisible = true;
+        const messages = [ '¿Buscas tu terreno ideal?', '¡Hazme clic para ayudarte!', '¿Nuevos lotes?', '¡Pregúntame!', '¿Agendar cita?' ];
+        function cycleProactiveMessage() { if (!tekoWindow.classList.contains('d-none') || !bubbleVisible) { tekoBubble.style.opacity = '0'; return; } tekoMessage.textContent = messages[messageIndex]; tekoBubble.style.opacity = '1'; messageIndex = (messageIndex + 1) % messages.length; }
+        function startBubbleInterval() { bubbleVisible = true; clearInterval(bubbleInterval); setTimeout(cycleProactiveMessage, 1500); bubbleInterval = setInterval(cycleProactiveMessage, 5000); }
+        function addMessage(message, sender = 'bot') { const msgDiv = document.createElement('div'); msgDiv.className = `teko-chat-message teko-message-${sender}`; msgDiv.textContent = message; chatBody.appendChild(msgDiv); chatBody.scrollTop = chatBody.scrollHeight; }
+        function showOptions(options) { chatOptions.innerHTML = ''; options.forEach(option => { const btn = document.createElement('button'); btn.className = 'btn btn-outline-primary btn-sm m-1'; btn.textContent = option.text; btn.onclick = () => handleOptionClick(option); chatOptions.appendChild(btn); }); }
+        const initialOptions = [ { text: 'Ayúdame a buscar', action: 'help_search_budget' }, { text: '¿Guardar favoritos?', action: 'help_favorites' }, { text: 'Dudas (FAQ)', action: 'help_faq' }, { text: 'WhatsApp', action: 'open_whatsapp' } ];
+        const budgetOptions = [ { text: '$200k', action: 'set_budget', value: 200000 }, { text: '$500k', action: 'set_budget', value: 500000 }, { text: '$1M', action: 'set_budget', value: 1000000 } ];
+        const zoneOptions = [ { text: 'Tijuana', action: 'set_zone', value: 'Tijuana' }, { text: 'Rosarito', action: 'set_zone', value: 'Rosarito' }, { text: 'Tecate', action: 'set_zone', value: 'Tecate' }, { text: 'Cualquiera', action: 'set_zone', value: 'Cualquiera' } ];
+        const faqOptions = [ { text: "¿Qué son 'servicios'?", action: 'answer_faq_servicios' }, { text: '¿Proceso de compra?', action: 'answer_faq_proceso' }, { text: 'Volver', action: 'go_to_start' } ];
+        let chatSearchCriteria = { precio: null, zona: null }; // Criterios temporales para el chat
+        function handleOptionClick(option) {
+            if (option.action !== 'go_to_start') addMessage(option.text, 'user');
+            setTimeout(() => {
+                switch (option.action) {
+                    case 'help_search_budget': addMessage('¡Claro! ¿Presupuesto máximo?'); showOptions(budgetOptions); break;
+                    case 'set_budget': chatSearchCriteria.precio = option.value; addMessage('¡Ok! ¿En qué zona buscas?'); showOptions(zoneOptions); break;
+                    case 'set_zone':
+                        chatSearchCriteria.zona = option.value;
+                        addMessage('¡Perfecto! Aplicando filtros...');
+                        // Aplica filtros en la página real (asegúrate que priceFilter y searchInput existan)
+                        if(typeof priceFilter !== 'undefined') priceFilter.value = chatSearchCriteria.precio || '';
+                        if(typeof searchInput !== 'undefined') searchInput.value = chatSearchCriteria.zona === 'Cualquiera' ? '' : chatSearchCriteria.zona;
+                        if(typeof filtrarYRenderizar === 'function') filtrarYRenderizar(); // Llama a la función del Script #4
+                        else console.warn("filtrarYRenderizar no definida al usar chat");
+                        setTimeout(() => { addMessage('¿Algo más?'); showOptions(initialOptions); chatSearchCriteria = { precio: null, zona: null }; }, 1000); // Resetear criterios del chat
+                        break;
+                    case 'help_favorites': addMessage('Aún no tenemos favoritos, ¡pero pronto! 😉'); setTimeout(() => showOptions(initialOptions), 1000); break;
+                    case 'help_faq': addMessage('¿Sobre qué quieres saber?'); showOptions(faqOptions); break;
+                    case 'answer_faq_servicios': addMessage("Usualmente incluye acceso a agua, luz y drenaje listos para conectar."); showOptions(faqOptions); break;
+                    case 'answer_faq_proceso': addMessage("1. Visita, 2. Financiamiento, 3. ¡Firma! Es fácil."); showOptions(faqOptions); break;
+                    case 'open_whatsapp': addMessage('Abriendo WhatsApp...'); window.open('https://wa.me/5216641234567', '_blank'); break; // CAMBIA TU NÚMERO
+                    case 'go_to_start': addMessage('¿En qué más te ayudo?'); showOptions(initialOptions); break;
+                }
+            }, 500);
+        }
+        function startChat() {
+            tekoWindow.classList.remove('d-none'); tekoBubble.style.opacity = '0'; clearInterval(bubbleInterval); bubbleVisible = false; chatBody.innerHTML = '';
+            const userName = sessionStorage.getItem('tekoUserName'); // Usa sessionStorage
+            let welcomeMessage = '¡Hola! Viendo terrenos... ¿Te ayudo a filtrar o tienes dudas?'; if (userName) welcomeMessage = `¡Hola, ${userName}! Viendo terrenos... ¿Te ayudo a filtrar o tienes dudas?`;
+            addMessage(welcomeMessage); showOptions(initialOptions);
+        }
+        tekoIcon.addEventListener('click', startChat);
+        closeButton.addEventListener('click', () => { tekoWindow.classList.add('d-none'); startBubbleInterval(); });
+        closeBubbleButton.addEventListener('click', (e) => { e.stopPropagation(); bubbleVisible = false; tekoBubble.style.opacity = '0'; clearInterval(bubbleInterval); });
+        startBubbleInterval();
     </script>
+
+    <script>
+        const botonCercaMi = document.getElementById('btn-cerca-mi');
+        function calcularDistancia(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2); const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); const distancia = R * c; return distancia.toFixed(1); }
+        function ordenarPorCercania(posicion) {
+            botonCercaMi.disabled = true; botonCercaMi.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculando...';
+            const userLat = posicion.coords.latitude; const userLon = posicion.coords.longitude; console.log(`Ubicación: ${userLat}, ${userLon}`);
+            // Asegurarse que todosLosTerrenos exista (definido en script #4)
+            if (typeof todosLosTerrenos === 'undefined' || todosLosTerrenos.length === 0) {
+                 console.error("Variable 'todosLosTerrenos' no encontrada o vacía.");
+                 alert("Error: No se pudieron procesar los terrenos.");
+                 botonCercaMi.disabled = false; botonCercaMi.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i> Mostrar Cerca de Mí';
+                 return;
+            }
+            todosLosTerrenos.forEach(terreno => { if (terreno.latitud && terreno.longitud) { terreno.distanciaKm = parseFloat(calcularDistancia(userLat, userLon, parseFloat(terreno.latitud), parseFloat(terreno.longitud))); } else { terreno.distanciaKm = Infinity; } });
+            todosLosTerrenos.sort((a, b) => a.distanciaKm - b.distanciaKm);
+            // Asegurarse que renderTerrains exista (definido en script #4)
+            if(typeof renderTerrains === 'function') {
+                renderTerrains(todosLosTerrenos, true); // Llama a render con mostrarDistancia=true
+            } else {
+                console.error("Función 'renderTerrains' no encontrada.");
+            }
+            botonCercaMi.disabled = false; botonCercaMi.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i> Mostrar Cerca de Mí';
+        }
+        function errorUbicacion(error) { let mensaje = 'No pudimos obtener tu ubicación.'; if (error.code === 1) mensaje = 'Rechazaste el permiso.'; else if (error.code === 2) mensaje = 'Posición no disponible.'; else if (error.code === 3) mensaje = 'Timeout.'; console.warn("Error geo:", error.message); alert(mensaje); botonCercaMi.disabled = false; botonCercaMi.innerHTML = '<i class="bi bi-geo-alt-fill me-2"></i> Mostrar Cerca de Mí'; }
+        botonCercaMi.addEventListener('click', () => {
+             // Asegurarse que todosLosTerrenos exista
+             if (typeof todosLosTerrenos === 'undefined' || !todosLosTerrenos || todosLosTerrenos.length === 0) { alert('Espera a que carguen los terrenos.'); return; }
+             if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(ordenarPorCercania, errorUbicacion, { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }); } else { alert('Navegador no soporta geolocalización.'); }
+        });
+    </script>
+
+    <script>
+        let todosLosTerrenos = []; // Definir aquí para que sea global en ESTE script y accesible por script #3
+        const contenedorTerrenos = document.getElementById('lista-terrenos-container');
+        const searchInput = document.getElementById('searchInput');
+        const priceFilter = document.getElementById('priceFilter');
+        const params = new URLSearchParams(window.location.search);
+        const precioURL = params.get('precio_max');
+        const zonaURL = params.get('zona');
+        const cercaDeMiURL = params.get('cerca');
+
+        function renderTerrains(terrenos, mostrarDistancia = false) {
+            contenedorTerrenos.innerHTML = '';
+            if (terrenos.length === 0) { contenedorTerrenos.innerHTML = '<p class="text-center col-12 h4">No encontramos terrenos con esos criterios.</p>'; return; }
+            terrenos.forEach(terreno => {
+                const imagenPrincipal = (terreno.imagenes && terreno.imagenes.length > 0) ? terreno.imagenes[0] : 'https://via.placeholder.com/400x250';
+                let distanciaHTML = '';
+                if (mostrarDistancia && terreno.distanciaKm !== Infinity && terreno.distanciaKm !== undefined) { distanciaHTML = `<p class="card-text text-success small"><i class="bi bi-geo-alt-fill"></i> Aprox. ${terreno.distanciaKm} km de ti</p>`; }
+                else if (mostrarDistancia && (terreno.distanciaKm === Infinity || terreno.distanciaKm === undefined)) { distanciaHTML = `<p class="card-text text-muted small"><i class="bi bi-geo-alt"></i> Ubicación no disponible</p>`; }
+                const cardHTML = `<div class="col"><div class="card h-100"><img src="${imagenPrincipal}" class="card-img-top" alt="${terreno.nombre}"><div class="card-body"><h5 class="card-title">${terreno.nombre}</h5><p class="card-text">Ubicación: ${terreno.ubicacion}</p>${distanciaHTML}<p class="card-text"><strong>Precio:</strong> $${terreno.precio} MXN</p><a href="./detalles.html?id=${terreno.id}" class="btn btn-primary">Ver Detalles</a></div></div></div>`;
+                contenedorTerrenos.innerHTML += cardHTML;
+            });
+        }
+        function filtrarYRenderizar() {
+            const textoBusqueda = searchInput.value.toLowerCase();
+            const precioMax = priceFilter.value;
+            let terrenosFiltrados = todosLosTerrenos; // Usar la global
+            if (precioMax) { terrenosFiltrados = terrenosFiltrados.filter(t => parseFloat(t.precio) <= parseFloat(precioMax)); }
+            if (textoBusqueda) { terrenosFiltrados = terrenosFiltrados.filter(t => t.nombre.toLowerCase().includes(textoBusqueda) || t.ubicacion.toLowerCase().includes(textoBusqueda)); }
+            renderTerrains(terrenosFiltrados, false); // No mostrar distancia en filtros normales
+        }
+        async function cargarTerrenosInicial() {
+            try {
+                const response = await fetch('http://localhost:3000/api/terrenos');
+                if (!response.ok) throw new Error(`Error red: ${response.statusText}`);
+                todosLosTerrenos = await response.json(); // Asigna a la global
+                if (precioURL && Array.from(priceFilter.options).some(opt => opt.value === precioURL)) { priceFilter.value = precioURL; }
+                if (zonaURL && zonaURL.toLowerCase() !== 'cualquiera') { searchInput.value = zonaURL; }
+                searchInput.addEventListener('input', filtrarYRenderizar);
+                priceFilter.addEventListener('change', filtrarYRenderizar);
+                filtrarYRenderizar(); // Primera renderización
+
+                // ***** INICIAR TUTORIAL DESPUÉS DE CARGAR *****
+                if (typeof startPageTutorial === 'function' && typeof terrenosSteps !== 'undefined') {
+                    // Pequeña espera para asegurar renderizado visual
+                    setTimeout(() => {
+                        startPageTutorial('terrenosTutorialDone_v2', terrenosSteps);
+                    }, 300);
+                }
+
+                if (cercaDeMiURL === 'true') { setTimeout(() => { if(botonCercaMi) botonCercaMi.click(); }, 500); }
+            } catch (error) { console.error('Error al cargar:', error); contenedorTerrenos.innerHTML = '<p class="text-center text-danger col-12">No se pudieron cargar los terrenos. Revisa que el servidor esté corriendo.</p>'; }
+        }
+        document.addEventListener('DOMContentLoaded', cargarTerrenosInicial);
+    </script>
+
+    <script>
+        // --- Función Genérica startPageTutorial ---
+        const startPageTutorial = (storageKey, steps) => {
+            const tutorialCompleted = sessionStorage.getItem(storageKey);
+            if (tutorialCompleted || !steps || steps.length === 0) return;
+            // Evitar múltiples tutoriales si algo falla
+            if (document.querySelector('.teko-dialog')) return;
+
+            const dialog = document.createElement("div"); dialog.className = "teko-dialog hidden";
+            const tekoImg = document.createElement("img"); tekoImg.src = "imagenes teko/ajolote.gif"; tekoImg.alt = "Teko";
+            const textContainer = document.createElement("div"); const msg = document.createElement("p");
+            const btnContainer = document.createElement("div"); btnContainer.className = "dialog-buttons";
+            const nextBtn = document.createElement("button"); nextBtn.className = "btn btn-primary btn-sm";
+            const skipBtn = document.createElement("button"); skipBtn.className = "btn btn-secondary btn-sm"; skipBtn.textContent = "Saltar";
+            btnContainer.appendChild(skipBtn); btnContainer.appendChild(nextBtn);
+            textContainer.appendChild(msg); textContainer.appendChild(btnContainer);
+            dialog.appendChild(tekoImg); dialog.appendChild(textContainer); document.body.appendChild(dialog);
+            let currentStepIndex = 0; let currentHighlight = null;
+            const showStep = (index) => {
+                if (currentHighlight) { currentHighlight.remove(); currentHighlight = null; }
+                const step = steps[index]; if (!step) { endTutorial(); return; }
+                const target = document.querySelector(step.selector);
+                if (!target) { console.warn(`Tutorial: Elemento "${step.selector}" no encontrado.`); if (index > 0) setTimeout(() => showStep(index), 300); else { console.error("Error al iniciar tutorial."); endTutorial(); } return; }
+                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }); // Asegura visibilidad
+                // Espera un poco a que termine el scroll antes de calcular rect
+                setTimeout(() => {
+                    const rect = target.getBoundingClientRect();
+                    const highlight = document.createElement("div"); highlight.className = "teko-highlight";
+                    highlight.style.top = `${rect.top + window.scrollY - 5}px`; highlight.style.left = `${rect.left + window.scrollX - 5}px`; highlight.style.width = `${rect.width + 10}px`; highlight.style.height = `${rect.height + 10}px`;
+                    document.body.appendChild(highlight); currentHighlight = highlight;
+                    msg.textContent = step.message; nextBtn.textContent = index === steps.length - 1 ? "¡Entendido!" : "Siguiente";
+                    let dialogTop = rect.bottom + window.scrollY + 10; let dialogLeft = rect.left + window.scrollX;
+                    if (dialogLeft + 350 > window.innerWidth) dialogLeft = window.innerWidth - 360;
+                    const dialogHeight = dialog.offsetHeight || 100; if (dialogTop + dialogHeight > window.innerHeight + window.scrollY) dialogTop = rect.top + window.scrollY - dialogHeight - 10;
+                    dialog.style.top = `${dialogTop}px`; dialog.style.left = `${dialogLeft}px`; dialog.classList.remove('hidden');
+                }, 350); // Tiempo para el scroll
+            };
+            const endTutorial = () => { const dlg = document.querySelector('.teko-dialog'); if (dlg) dlg.remove(); const hlt = document.querySelector('.teko-highlight'); if (hlt) hlt.remove(); sessionStorage.setItem(storageKey, 'true'); };
+            nextBtn.addEventListener("click", () => { currentStepIndex++; showStep(currentStepIndex); }); skipBtn.addEventListener("click", endTutorial);
+            showStep(0); // Inicia el primer paso (el scrollIntoView está dentro)
+        };
+
+        // --- PASOS ESPECÍFICOS PARA terrenos.html ---
+        const terrenosSteps = [
+            { selector: '#lista-terrenos-container', message: 'Aquí verás la lista de terrenos. ¡Échales un vistazo!' },
+            { selector: '#searchInput', message: 'Usa esta barra para buscar por nombre o zona si ya sabes lo que quieres.' },
+            { selector: '#priceFilter', message: 'O filtra por tu presupuesto máximo usando este menú.' },
+            { selector: '#btn-cerca-mi', message: '¿Quieres ver qué hay cerca? Haz clic aquí y ordenaré la lista por distancia.' },
+            { selector: '#teko-icon', message: 'Y recuerda, si necesitas ayuda, ¡aquí estoy! Solo haz clic.' }
+        ];
+
+        // NOTA: La llamada a startPageTutorial se hace desde cargarTerrenosInicial
+    </script>
+
+    <script>
+    // Script para el botón de Dar de Alta Terreno
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnDarAlta = document.getElementById('btn-dar-alta');
+
+        if (btnDarAlta) {
+            btnDarAlta.addEventListener('click', () => {
+                // Aquí defines la acción. Por ejemplo, redirigir a una nueva página.
+                // Reemplaza 'alta_terreno.html' con la URL real si es diferente.
+                alert('Redirigiendo a la página de alta de terreno...');
+                window.location.href = './admin_login.html'; 
+            });
+        }
+    });
+</script>
 
 </body>
 </html>

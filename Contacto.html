@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,33 +18,51 @@
             align-items: flex-end;
         }
         .teko-icon-style {
-            background-color: #0d6efd;
-            border-radius: 50%;
-            padding: 15px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1001; /* Encima de la burbuja */
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .teko-icon-style img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ajusta el GIF al círculo */
         }
         .teko-bubble-style {
+            position: relative; /* Necesario para el botón de cerrar */
             background-color: #f8f9fa;
             color: #212529;
-            padding: 10px 15px;
+            padding: 10px 25px 10px 15px; /* Espacio extra a la derecha para la X */
             border-radius: 15px;
             margin-right: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
             max-width: 200px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
         }
-        .teko-bubble-style p {
-            margin: 0;
-            font-size: 0.9rem;
+        .teko-bubble-style p { margin: 0; font-size: 0.9rem; }
+        #close-bubble {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #6c757d;
+            cursor: pointer;
+            line-height: 1;
         }
+        #close-bubble:hover { color: #000; }
         .teko-window-style {
             position: fixed;
-            bottom: 100px;
+            bottom: 110px; /* Ajustado para el ícono de 80px */
             right: 20px;
             width: 300px;
             background-color: white;
             border-radius: 10px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             z-index: 1000;
             border: 1px solid #ddd;
         }
@@ -57,9 +76,56 @@
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
         }
-        .teko-window-body {
+        .teko-chat-body {
             padding: 15px;
+            height: 250px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
         }
+        .teko-chat-message {
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        .teko-message-bot { background-color: #e9ecef; color: #000; align-self: flex-start; }
+        .teko-message-user { background-color: #0d6efd; color: white; margin-left: auto; }
+        .teko-chat-options { padding: 10px; border-top: 1px solid #ddd; background-color: #fff; }
+
+        /* --- ESTILOS DEL TUTORIAL GUIADO --- */
+        .teko-highlight {
+            position: absolute;
+            border: 3px dashed #0d6efd; /* Azul Bootstrap */
+            border-radius: 8px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); /* Sombra exterior para oscurecer */
+            z-index: 1050; /* Encima de la mayoría de los elementos */
+            pointer-events: none; /* Permite hacer clic a través del resaltado */
+            transition: all 0.3s ease-in-out;
+        }
+        .teko-dialog {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: flex; /* Para poner imagen y texto lado a lado */
+            align-items: center;
+            gap: 15px; /* Espacio entre imagen y texto */
+            z-index: 1051; /* Encima del resaltado */
+            max-width: 350px; /* Ancho máximo del diálogo */
+            transition: top 0.3s ease-in-out, left 0.3s ease-in-out;
+        }
+        .teko-dialog img {
+            width: 60px; /* Tamaño del GIF */
+            height: 60px;
+            border-radius: 50%; /* Hacerlo redondo */
+            object-fit: cover;
+            flex-shrink: 0; /* Evita que la imagen se encoja */
+        }
+        .teko-dialog p { margin: 0 0 10px 0; font-size: 0.95rem; color: #333; }
+        .teko-dialog .dialog-buttons { display: flex; justify-content: space-between; }
+        .teko-dialog.hidden { display: none; }
+    
     </style>
 </head>
 
@@ -67,61 +133,128 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="./index.html">
-                <img src="C:\Users\WINDOWS\Desktop\Teko-Proyecto\imagenes teko\logo superior teco.png" alt="Teko Logo" width="30" height="30"> Teko
+            <a class="navbar-brand" href="./inicio.html">
+                <img src="imagenes teko/logo superior teco.png" alt="Teko Logo" width="30" height="30" class="d-inline-block align-text-top"> Teko
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="./index.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="./inicio.html">Inicio</a></li>
                     <li class="nav-item"><a class="nav-link" href="./terrenos.html">Terrenos</a></li>
-                    <li class="nav-item"><a class="nav-link active" href="./contacto.html">Contacto</a></li>
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="./contacto.html">Contacto</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <h1 class="mb-4">Contáctanos</h1>
-                <p>¿Tienes alguna pregunta? Envíanos un mensaje y te responderemos a la brevedad.</p>
-                <form>
+    <div class="container mt-5 mb-5">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <h1>Agenda una Visita</h1>
+                <p class="lead">Déjanos tus datos y un asesor se pondrá en contacto contigo a la brevedad.</p>
+
+                <form id="contactForm">
                     <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre Completo</label>
-                        <input type="text" class="form-control" id="nombre" required>
+                        <label for="nombreCompleto" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="nombreCompleto" required>
                     </div>
                     <div class="mb-3">
                         <label for="email" class="form-label">Correo Electrónico</label>
                         <input type="email" class="form-control" id="email" required>
                     </div>
                     <div class="mb-3">
-                        <label for="mensaje" class="form-label">Mensaje</label>
-                        <textarea class="form-control" id="mensaje" rows="5" required></textarea>
+                        <label for="telefono" class="form-label">Teléfono (Opcional)</label>
+                        <input type="tel" class="form-control" id="telefono">
                     </div>
-                    <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
-                </form>
+                    <div class="mb-3">
+                        <label for="mensaje" class="form-label">Mensaje</label>
+                        <textarea class="form-control" id="mensaje" rows="5" placeholder="Ej: Me interesa el terreno 'Teko Norte'..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitButton">Enviar Mensaje</button> </form>
             </div>
         </div>
     </div>
 
     <div id="teko-container">
-        <div id="teko-bubble" class="teko-bubble-style">
-            <p id="teko-message">¿Prefieres chatear? ¡Estoy a un clic!</p>
-        </div>
-        <div id="teko-icon" class="teko-icon-style">
-            <img src="https://i.imgur.com/g82695V.png" alt="Asistente Teko" width="40">
-        </div>
+        <div id="teko-bubble" class="teko-bubble-style"><span id="close-bubble">×</span><p id="teko-message">¿Dudas con el formulario?</p></div>
+        <div id="teko-icon" class="teko-icon-style"><img src="imagenes teko/ajolote.gif" alt="Asistente Teko"></div>
+    </div>
+    <div id="teko-window" class="teko-window-style d-none">
+        <div class="teko-window-header"><h5>Asistente Teko</h5><button id="close-teko" type="button" class="btn-close"></button></div>
+        <div id="teko-chat-body"></div>
+        <div id="teko-chat-options"></div>
     </div>
 
-    <div id="teko-window" class="teko-window-style d-none">
-        <div class="teko-window-header">
-            <h5>Contacto Directo</h5>
-            <button id="close-teko" type="button" class="btn-close"></button>
-        </div>
-        <div class="teko-window-body">
-            <p>¿Tienes una pregunta rápida? ¡Escríbenos por WhatsApp!</p>
-            <a href="https://wa.me/5216641234567" target="_blank" class="btn btn-success w-100">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp me-2" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ... (Todo el script del asistente para contacto.html, usando sessionStorage.getItem) ...
+        const tekoIcon = document.getElementById('teko-icon'); // Etc.
+        function startChat() {
+            // ...
+            const userName = sessionStorage.getItem('tekoUserName'); // Usa sessionStorage
+            // ...
+        }
+        // ... (Resto del script del asistente)
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedName = sessionStorage.getItem('tekoUserName'); // Usa sessionStorage
+            if (storedName) {
+                const nameInput = document.getElementById('nombreCompleto');
+                if (nameInput) { nameInput.value = storedName; }
+            }
+        });
+    </script>
+
+    <script>
+        function startPageTutorial(storageKey, steps) { /* ... (Toda la función genérica startPageTutorial va aquí, sin cambios) ... */ }
+        const startPageTutorial = (storageKey, steps) => { // Versión resumida para pegar
+            const tutorialCompleted = sessionStorage.getItem(storageKey);
+            if (tutorialCompleted || !steps || steps.length === 0) return;
+            const dialog = document.createElement("div"); dialog.className = "teko-dialog hidden";
+            const tekoImg = document.createElement("img"); tekoImg.src = "imagenes teko/ajolote.gif"; tekoImg.alt = "Teko";
+            const textContainer = document.createElement("div"); const msg = document.createElement("p");
+            const btnContainer = document.createElement("div"); btnContainer.className = "dialog-buttons";
+            const nextBtn = document.createElement("button"); nextBtn.className = "btn btn-primary btn-sm";
+            const skipBtn = document.createElement("button"); skipBtn.className = "btn btn-secondary btn-sm"; skipBtn.textContent = "Saltar";
+            btnContainer.appendChild(skipBtn); btnContainer.appendChild(nextBtn);
+            textContainer.appendChild(msg); textContainer.appendChild(btnContainer);
+            dialog.appendChild(tekoImg); dialog.appendChild(textContainer); document.body.appendChild(dialog);
+            let currentStepIndex = 0; let currentHighlight = null;
+            const showStep = (index) => {
+                if (currentHighlight) { currentHighlight.remove(); currentHighlight = null; }
+                const step = steps[index]; if (!step) { endTutorial(); return; }
+                const target = document.querySelector(step.selector);
+                if (!target) { console.warn(`Tutorial: Elemento "${step.selector}" no encontrado.`); if (index > 0) setTimeout(() => showStep(index), 300); else { console.error("Error al iniciar tutorial."); endTutorial(); } return; }
+                const rect = target.getBoundingClientRect();
+                const highlight = document.createElement("div"); highlight.className = "teko-highlight";
+                highlight.style.top = `${rect.top + window.scrollY - 5}px`; highlight.style.left = `${rect.left + window.scrollX - 5}px`; highlight.style.width = `${rect.width + 10}px`; highlight.style.height = `${rect.height + 10}px`;
+                document.body.appendChild(highlight); currentHighlight = highlight;
+                msg.textContent = step.message; nextBtn.textContent = index === steps.length - 1 ? "¡Entendido!" : "Siguiente";
+                let dialogTop = rect.bottom + window.scrollY + 10; let dialogLeft = rect.left + window.scrollX;
+                if (dialogLeft + 350 > window.innerWidth) dialogLeft = window.innerWidth - 360;
+                const dialogHeight = dialog.offsetHeight || 100; if (dialogTop + dialogHeight > window.innerHeight + window.scrollY) dialogTop = rect.top + window.scrollY - dialogHeight - 10;
+                dialog.style.top = `${dialogTop}px`; dialog.style.left = `${dialogLeft}px`; dialog.classList.remove('hidden');
+            };
+            const endTutorial = () => { const dlg = document.querySelector('.teko-dialog'); if (dlg) dlg.remove(); const hlt = document.querySelector('.teko-highlight'); if (hlt) hlt.remove(); sessionStorage.setItem(storageKey, 'true'); };
+            nextBtn.addEventListener("click", () => { currentStepIndex++; showStep(currentStepIndex); }); skipBtn.addEventListener("click", endTutorial);
+            setTimeout(() => showStep(0), 100); // Inicia después de un breve instante
+        };
+
+        // --- PASOS ESPECÍFICOS PARA contacto.html ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const contactoSteps = [
+                { selector: '#nombreCompleto', message: 'Aquí va tu nombre completo. Si ya me lo dijiste antes, ¡lo recordaré por ti!' },
+                { selector: '#email', message: 'Necesitamos tu correo para poder responderte.' },
+                { selector: '#mensaje', message: 'Escribe aquí cualquier duda o el terreno que te interesa.' },
+                { selector: '#submitButton', message: 'Cuando termines, haz clic aquí para enviar tu mensaje.' }
+            ];
+            // Key única para este tutorial
+            startPageTutorial('contactoTutorialDone_v2', contactoSteps);
+        });
+    </script>
+
+</body>
+</html>
