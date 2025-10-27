@@ -4,9 +4,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dar de Alta Terreno - Teko Admin</title>
+    <title>Administrar Terreno - Teko Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { padding-bottom: 3rem; }
+        
+        /* Ocultar flechas en campos de número (opcional) */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* Estilo para la imagen de Teko en el alert */
+        .alert-teko-img {
+            width: 60px; height: 60px; border-radius: 50%;
+            object-fit: cover; margin-right: 15px; flex-shrink: 0;
+        }
+
+        /* Estilo para los inputs dinámicos de imagen */
+        #imagenes-container .input-group {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilo para la Tabla de Símbolos (Árbol) */
+        .symbol-table-wrapper {
+            font-size: 0.85rem; 
+            max-height: 200px; 
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .symbol-table-wrapper thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        /* ESTILO DE DIÁLOGO DE ERROR (AVISO TEKO) */
+        .validation-error-dialog {
+            position: absolute;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1060;
+            max-width: 300px;
+            font-size: 0.9rem;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .validation-error-dialog img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .validation-error-dialog p { margin: 0; }
+        .validation-error-dialog.hidden { display: none; }
+
+    </style>
 </head>
 
 <body>
@@ -23,149 +90,486 @@
     </nav>
 
     <div class="container mt-5">
-        <h1 class="mb-4">Formulario de Alta de Nuevo Terreno</h1>
 
-        <form id="altaTerrenoForm" class="p-4 border rounded shadow-sm bg-white">
-            
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 id="pageTitle">Dar de Alta Nuevo Terreno</h1>
+            <a href="terrenos.html" class="btn btn-sm btn-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Regresar al listado
+            </a>
+        </div>
+
+        <!-- Mensaje de estado (éxito o error) -->
+        <div class="mt-4 alert d-none" id="statusMessage" role="alert"></div>
+        <!-- Mensaje si no se carga el terreno en modo edición -->
+        <div id="loadingError" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="terrenoForm" class="p-4 border rounded shadow-sm bg-white d-none" novalidate>
+
+             <input type="hidden" id="terrenoId" name="terrenoId">
+
             <div class="mb-3">
-                <label for="nombre" class="form-label">Nombre del Desarrollo</label>
-                <input type="text" class="form-control" id="nombre" placeholder="Ej: Teko Vista Hermosa" required>
+                <label for="nombre" class="form-label">Nombre del Desarrollo (Obligatorio)</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej: Teko Vista Hermosa" required>
             </div>
 
             <div class="mb-3">
-                <label for="ubicacion" class="form-label">Ubicación (Ciudad/Zona)</label>
-                <input type="text" class="form-control" id="ubicacion" placeholder="Ej: Rosarito, Baja California" required>
+                <label for="ubicacion" class="form-label">Ubicación (Ciudad/Zona) (Obligatorio)</label>
+                <select class="form-select" id="ubicacion" name="ubicacion" required>
+                    <option value="" disabled selected>-- Selecciona una zona --</option>
+                    <option value="Tijuana">Tijuana</option>
+                    <option value="Rosarito">Rosarito</option>
+                    <option value="Tecate">Tecate</option>
+                    <option value="Ensenada">Ensenada</option>
+                    <option value="Otra">Otra</option>
+                </select>
+            </div>
+
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="precio" class="form-label">Precio (MXN) (Obligatorio, solo números)</label>
+                    <input type="text" class="form-control" id="precio" name="precio" placeholder="Ej: 250,000" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="area" class="form-label">Área (m²) (Obligatorio, solo números)</label>
+                    <input type="text" class="form-control" id="area" name="area" placeholder="Ej: 500.50" required>
+                </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="precio" class="form-label">Precio (MXN)</label>
-                    <input type="number" class="form-control" id="precio" min="10000" step="1000" required>
+                    <label for="latitud" class="form-label">Latitud (Obligatorio, -90 a 90)</label>
+                    <input type="text" class="form-control" id="latitud" name="latitud" placeholder="Ej: 32.5342" required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="tamanio" class="form-label">Tamaño (m²)</label>
-                    <input type="number" class="form-control" id="tamanio" min="50" step="1" required>
+                    <label for="longitud" class="form-label">Longitud (Obligatorio, -180 a 180)</label>
+                    <input type="text" class="form-control" id="longitud" name="longitud" placeholder="Ej: -117.0425" required>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="latitud" class="form-label">Latitud (Coordenada)</label>
-                    <input type="text" class="form-control" id="latitud" placeholder="Ej: 32.5342">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="longitud" class="form-label">Longitud (Coordenada)</label>
-                    <input type="text" class="form-control" id="longitud" placeholder="Ej: -117.0425">
-                </div>
-            </div>
-            
             <div class="mb-3">
-                <label for="imagenes" class="form-label">Imágenes (URLs separadas por coma)</label>
-                <textarea class="form-control" id="imagenes" rows="3" placeholder="URL1, URL2, URL3..."></textarea>
-                <div class="form-text">Usa la URL completa de cada imagen (e.g. `https://picsum.photos/400/250`).</div>
+                <label class="form-label">Servicios (Opcional)</label>
+                <div id="servicios-container" class="p-3 border rounded" style="background-color: #f8f9fa;">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input servicio-check" type="checkbox" id="servicio_agua" value="Agua">
+                        <label class="form-check-label" for="servicio_agua">Agua</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input servicio-check" type="checkbox" id="servicio_luz" value="Luz">
+                        <label class="form-check-label" for="servicio_luz">Luz</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input servicio-check" type="checkbox" id="servicio_drenaje" value="Drenaje">
+                        <label class="form-check-label" for="servicio_drenaje">Drenaje</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input servicio-check" type="checkbox" id="servicio_pavimento" value="Pavimento">
+                        <label class="form-check-label" for="servicio_pavimento">Pavimento</label>
+                    </div>
+                     <div class="form-check form-check-inline">
+                        <input class="form-check-input servicio-check" type="checkbox" id="servicio_internet" value="Internet (Fibra)">
+                        <label class="form-check-label" for="servicio_internet">Internet (Fibra)</label>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-4">
-                <label for="servicios" class="form-label">Servicios Incluidos</label>
-                <textarea class="form-control" id="servicios" rows="2" placeholder="Ej: Agua potable, Luz CFE, Drenaje (Separar por comas)"></textarea>
-                <div class="form-text">Especifica los servicios disponibles.</div>
-                <label for="descripcion" class="form-label">Descripción del Terreno</label>
-                <textarea class="form-control" id="descripcion" rows="4" required></textarea>
+            <div class="mb-3">
+                <label class="form-label">Imágenes (Obligatorio, al menos una)</label>
+                <div id="imagenes-container">
+                    <!-- Los inputs se añadirán aquí con JS -->
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addImagenBtn">
+                    <i class="bi bi-plus-circle"></i> Añadir URL de Imagen
+                </button>
+                <div class="form-text">Usa URLs directas (.jpg, .png...).</div>
             </div>
 
-            <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-cloud-arrow-up-fill me-2"></i> Guardar Terreno</button>
+             <div class="mb-4">
+                <label for="descripcion" class="form-label">Descripción (Obligatorio)</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="4" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-lg" id="submitButton">
+                 <i class="bi me-2" id="submitIcon"></i> <span id="submitText">Guardar</span>
+            </button>
             
-            <div class="mt-4 alert d-none" id="statusMessage" role="alert"></div>
         </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- SCRIPT REFACTORIZADO CON LÓGICA DE AUTÓMATAS v7 (BUGFIX) -->
     <script>
-    // --- Lógica de Autenticación y Cierre de Sesión ---
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- Selectores ---
         const adminWelcome = document.getElementById('adminWelcome');
         const logoutBtn = document.getElementById('logoutBtn');
         const statusMessage = document.getElementById('statusMessage');
-        const altaTerrenoForm = document.getElementById('altaTerrenoForm'); // Lo definimos aquí
-        
-        // Verificar si el administrador está logeado
+        const terrenoForm = document.getElementById('terrenoForm');
+        const pageTitle = document.getElementById('pageTitle');
+        const loadingError = document.getElementById('loadingError');
+        const submitButton = document.getElementById('submitButton');
+        const submitIcon = document.getElementById('submitIcon');
+        const submitText = document.getElementById('submitText');
+        const imagenesContainer = document.getElementById('imagenes-container');
+        const addImagenBtn = document.getElementById('addImagenBtn');
+        const precioInput = document.getElementById('precio');
+        const areaInput = document.getElementById('area');
+
+        // --- Autenticación y Carga (Sin cambios) ---
         const isLoggedIn = sessionStorage.getItem('tekoAdminLoggedIn') === 'true';
-        if (!isLoggedIn) {
-            alert('Acceso no autorizado. Por favor, inicie sesión.');
-            window.location.href = './admin_login.html';
-            return;
-        }
-
-        // Mostrar nombre de usuario
-        const userName = sessionStorage.getItem('tekoUserName') || 'Administrador';
-        adminWelcome.textContent = `Hola, ${userName}`;
-
-        // Manejar el cierre de sesión
-        logoutBtn.addEventListener('click', () => {
-            sessionStorage.removeItem('tekoAdminLoggedIn');
-            sessionStorage.removeItem('tekoUserName');
-            alert('Sesión cerrada. Redirigiendo al login.');
-            window.location.href = './admin_login.html';
-        });
+        if (!isLoggedIn) { alert('Acceso no autorizado.'); window.location.href = './admin_login.html'; return; }
+        const adminUser = sessionStorage.getItem('tekoAdminUser') || 'Admin';
+        if(adminWelcome) adminWelcome.textContent = `Hola, ${adminUser}`;
+        if(logoutBtn) { logoutBtn.addEventListener('click', () => { sessionStorage.clear(); alert('Sesión cerrada.'); window.location.href = './admin_login.html'; }); }
         
-        // --- Lógica del Formulario de Alta ---
-        altaTerrenoForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const params = new URLSearchParams(window.location.search);
+        const terrenoId = params.get('id');
+        const modoEdicion = terrenoId !== null;
 
-            // 1. Recolectar datos del formulario
-            const nuevoTerreno = {
-                id: Date.now(), // ID temporal
-                nombre: document.getElementById('nombre').value,
-                ubicacion: document.getElementById('ubicacion').value,
-                precio: parseFloat(document.getElementById('precio').value),
-                tamanio_m2: parseFloat(document.getElementById('tamanio').value),
-                latitud: document.getElementById('latitud').value || null,
-                longitud: document.getElementById('longitud').value || null,
-                servicios: document.getElementById('servicios').value,
-                descripcion: document.getElementById('descripcion').value,
-                imagenes: document.getElementById('imagenes').value.split(',').map(url => url.trim()).filter(url => url !== '')
-            };
-            
-            // Limpiar mensaje anterior
-            statusMessage.classList.add('d-none');
-            statusMessage.innerHTML = '';
+        // --- Lógica Inputs Dinámicos (Sin cambios) ---
+        function addImagenInput(url = '') {
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group mb-2';
+            inputGroup.innerHTML = `
+                <span class="input-group-text"><i class="bi bi-image"></i></span>
+                <input type="text" class="form-control imagen-input" placeholder="https://..." value="${url}" required>
+                <button class="btn btn-outline-danger" type="button" onclick="removeImagenInput(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+            imagenesContainer.appendChild(inputGroup);
+        }
+        window.removeImagenInput = function(button) {
+            button.closest('.input-group').remove();
+            if (imagenesContainer.children.length === 0) { addImagenInput(); }
+        }
+        addImagenBtn.addEventListener('click', () => addImagenInput());
+
+        // --- Lógica Formateo de Números (Comas) (Sin cambios) ---
+        function formatNumber(value) {
+            if (!value) return '';
+            let numStr = value.toString().replace(/[^0-9.]/g, '');
+            const parts = numStr.split('.');
+            let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            if (parts.length > 1) { return integerPart + '.' + parts[1]; }
+            return integerPart;
+        }
+        function setupFormatting(inputElement) {
+             inputElement.addEventListener('input', (e) => {
+                 let cursorPosition = e.target.selectionStart;
+                 let originalLength = e.target.value.length;
+                 const formattedValue = formatNumber(e.target.value);
+                 e.target.value = formattedValue;
+                 let newLength = formattedValue.length;
+                 cursorPosition += (newLength - originalLength);
+                 e.target.setSelectionRange(cursorPosition, cursorPosition);
+             });
+        }
+        setupFormatting(precioInput);
+        setupFormatting(areaInput);
 
 
-            // 2. Realizar el envío a la API
+        // --- Configuración Inicial (Modo Edición / Carga) (Modificado para formatear) ---
+        if (modoEdicion) {
+            pageTitle.textContent = "Editando Terreno...";
+            submitButton.classList.add('btn-warning'); submitIcon.className = 'bi bi-save-fill me-2'; submitText.textContent = "Guardar Cambios";
             try {
-                // Petición real al servidor backend
-                const response = await fetch('http://localhost:3000/api/terrenos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(nuevoTerreno) 
-                });
+                const response = await fetch(`http://localhost:3000/api/terrenos/${terrenoId}`);
+                if (!response.ok) { throw new Error(`No se pudo cargar: ${response.statusText}`); }
+                const terreno = await response.json();
+                
+                document.getElementById('terrenoId').value = terreno.id;
+                document.getElementById('nombre').value = terreno.nombre || '';
+                document.getElementById('ubicacion').value = terreno.ubicacion || '';
+                precioInput.value = formatNumber(terreno.precio || ''); // Formatear
+                areaInput.value = formatNumber(terreno.area || '');     // Formatear
+                document.getElementById('latitud').value = terreno.latitud || '';
+                document.getElementById('longitud').value = terreno.longitud || '';
+                document.getElementById('descripcion').value = terreno.descripcion || '';
 
-                if (!response.ok) {
-                    // Si el servidor devuelve un error (4xx, 5xx)
-                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                if (terreno.servicios) {
+                    const serviciosArray = terreno.servicios.split(',').map(s => s.trim().toLowerCase());
+                    document.querySelectorAll('.servicio-check').forEach(check => {
+                        if (serviciosArray.includes(check.value.toLowerCase())) { check.checked = true; }
+                    });
                 }
-                
-                // Asumimos éxito. Si el servidor devuelve el objeto guardado:
-                const terrenoGuardado = await response.json(); 
+                if (Array.isArray(terreno.imagenes) && terreno.imagenes.length > 0) {
+                    imagenesContainer.innerHTML = ''; 
+                    terreno.imagenes.forEach(url => addImagenInput(url));
+                } else { addImagenInput(); }
 
-                // Mostrar mensaje de éxito
-                statusMessage.classList.remove('d-none', 'alert-danger');
-                statusMessage.classList.add('alert-success');
-                statusMessage.innerHTML = '<strong>¡Terreno guardado!</strong> ID: ' + (terrenoGuardado.id || nuevoTerreno.id);
-                
-                // Limpiar el formulario
-                altaTerrenoForm.reset();
+                pageTitle.textContent = `Editando: ${terreno.nombre}`;
+                if(terrenoForm) terrenoForm.classList.remove('d-none');
 
             } catch (error) {
-                console.error('Error al guardar el terreno:', error);
-                statusMessage.classList.remove('d-none', 'alert-success');
-                statusMessage.classList.add('alert-danger');
-                statusMessage.innerHTML = `<strong>Error de conexión/servidor:</strong> ${error.message}. ¿Está corriendo tu backend?`;
+                console.error('Error al cargar datos:', error);
+                pageTitle.textContent = "Error al Cargar";
+                 if(loadingError){ loadingError.textContent = `Error: ${error.message}.`; loadingError.classList.remove('d-none'); }
             }
-        });
-    });
-</script>
-</body>
+        } else {
+            pageTitle.textContent = "Dar de Alta Nuevo Terreno";
+            submitButton.classList.add('btn-success'); submitIcon.className = 'bi bi-cloud-arrow-up-fill me-2'; submitText.textContent = "Guardar Terreno";
+            addImagenInput(); 
+            if(terrenoForm) terrenoForm.classList.remove('d-none');
+        }
 
+        // ======================================================
+        // --- SECCIÓN DE LENGUAJES Y AUTÓMATAS (MODIFICADA) ---
+        // ======================================================
+
+        // 1. DEFINICIÓN DE TOKENS (Sin cambios)
+        const TOKEN_TYPES = {
+            IDENTIFICADOR: 'IDENTIFICADOR', SELECCION: 'SELECCION', NUMERO: 'NUMERO',
+            LISTA_URL: 'LISTA_URL', LISTA_SERVICIOS: 'LISTA_SERVICIOS', VACIO: 'VACIO'
+        };
+
+        // 2. GRAMÁTICA Y REGLAS SEMÁNTICAS (Sin cambios)
+        const REGLAS_GRAMATICALES = {
+            'nombre':      { type: TOKEN_TYPES.IDENTIFICADOR, required: true, label: 'Nombre' },
+            'ubicacion':   { type: TOKEN_TYPES.SELECCION, required: true, label: 'Ubicación' },
+            'descripcion': { type: TOKEN_TYPES.IDENTIFICADOR, required: true, label: 'Descripción' },
+            'precio':      { type: TOKEN_TYPES.NUMERO, required: true, label: 'Precio', semantic: { isPositive: true } },
+            'area':        { type: TOKEN_TYPES.NUMERO, required: true, label: 'Área', semantic: { isPositive: true } },
+            'latitud':     { type: TOKEN_TYPES.NUMERO, required: true, label: 'Latitud', semantic: { range: [-90, 90] } },
+            'longitud':    { type: TOKEN_TYPES.NUMERO, required: true, label: 'Longitud', semantic: { range: [-180, 180] } },
+            'imagenes-container': { type: TOKEN_TYPES.LISTA_URL, required: true, label: 'Imágenes', semantic: { isUrlList: true } },
+            'servicios-container':{ type: TOKEN_TYPES.LISTA_SERVICIOS, required: false, label: 'Servicios' }
+        };
+
+        // 3. MANEJADOR DE ERRORES (Sin cambios)
+        const errorMessages = {
+            REQUIRED: (label) => `Error de Estructura: El campo "${label}" es obligatorio. Por favor, complétalo.`,
+            REQUIRED_SELECT: (label) => `Error de Estructura: Debes seleccionar una "${label}".`,
+            INVALID_TOKEN_NUMBER: (label) => `Error de Formato (Escritura): "${label}" solo acepta números. Corrige: Elimina letras o símbolos.`,
+            SEMANTIC_POSITIVE: (label) => `Error de Lógica (Significado): "${label}" debe ser un número mayor que cero.`,
+            SEMANTIC_RANGE: (label, range) => `Error de Lógica (Significado): "${label}" está fuera del rango geográfico (debe estar entre ${range[0]} y ${range[1]}).`,
+            SEMANTIC_URL_HTTP: (label, url) => `Error de Formato (Significado): En "${label}", la URL "${url.substring(0,30)}..." debe empezar con http:// o https://.`,
+            SEMANTIC_URL_FORMAT: (label, url) => `Error de Formato (Significado): En "${label}", la URL "${url.substring(0,30)}..." no parece una imagen válida (.jpg, .png, etc.).`
+        };
+
+        // 4. FUNCIONES DE AYUDA (Highlight y Display) (CORREGIDAS)
+        
+        let currentErrorDialog = null; // Guardar referencia al diálogo actual
+
+        // ***** FUNCIÓN clearAllErrors (CORREGIDA) *****
+        // Ahora sí limpia el borde rojo, el mensaje de status Y el diálogo de Teko
+        function clearAllErrors() {
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            if(statusMessage) {
+                statusMessage.className = 'mt-4 alert d-none';
+                statusMessage.innerHTML = '';
+            }
+            if (currentErrorDialog) {
+                currentErrorDialog.remove();
+                currentErrorDialog = null;
+            }
+        }
+        
+        // ***** FUNCIÓN showValidationError (CORREGIDA) *****
+        // Ahora añade el listener correcto para CADA tipo de input
+        function showValidationError(fieldElement, message) {
+            clearAllErrors(); // Limpia borde rojo de otros, y cualquier diálogo viejo
+            
+            let eventTarget = fieldElement; // Elemento al que adjuntar el listener
+            let focusTarget = fieldElement; // Elemento al que hacer focus
+            
+            if (fieldElement.id === 'imagenes-container') {
+                focusTarget = fieldElement.querySelector('input.imagen-input') || fieldElement;
+                eventTarget = focusTarget; 
+                fieldElement.querySelectorAll('input.imagen-input').forEach(inp => inp.classList.add('is-invalid'));
+            } else {
+                 fieldElement.classList.add('is-invalid'); // Resalta el campo actual
+            }
+
+            const dialog = document.createElement('div');
+            dialog.className = 'validation-error-dialog';
+            dialog.innerHTML = `<img src="imagenes teko/ajolote.gif" alt="Teko Error"><p>${message}</p>`;
+            document.body.appendChild(dialog);
+            currentErrorDialog = dialog;
+            
+            const fieldRect = focusTarget.getBoundingClientRect();
+            let dialogLeft = fieldRect.left + window.scrollX;
+            if (dialogLeft + 300 > window.innerWidth) { dialogLeft = window.innerWidth - 310; }
+            if (dialogLeft < 10) dialogLeft = 10;
+            
+            dialog.style.top = `${fieldRect.bottom + window.scrollY + 5}px`;
+            dialog.style.left = `${dialogLeft}px`;
+            
+            focusTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            focusTarget.focus();
+            
+            // ***** CORRECCIÓN DEL BUG *****
+            // Determina el tipo de evento correcto para limpiar el error
+            const eventType = (focusTarget.tagName.toUpperCase() === 'SELECT') ? 'change' : 'input';
+            
+            // Añade el listener para que llame a clearAllErrors (que limpia TODO)
+            eventTarget.addEventListener(eventType, clearAllErrors, { once: true });
+        }
+        
+        // Función displayErrors (para múltiples errores, aunque ahora usamos fail-fast)
+        function displayErrors(errors) {
+            statusMessage.className = 'mt-4 alert alert-danger d-flex align-items-center'; 
+            let errorListHtml = `<strong><i class="bi bi-exclamation-triangle-fill me-2"></i> ¡Ups! Teko encontró ${errors.length} error(es):</strong><ul>`;
+            errors.forEach(err => { 
+                errorListHtml += `<li>${err.message}</li>`; 
+                document.getElementById(err.id)?.classList.add('is-invalid'); // Resalta el campo
+            });
+            errorListHtml += '</ul><small><i>Revisa los campos marcados en rojo.</i></small>';
+            statusMessage.innerHTML = `<img src="imagenes teko/ajolote.gif" alt="Teko" class="alert-teko-img"><div>${errorListHtml}</div>`;
+            if (errors.length > 0) document.getElementById(errors[0].id).focus();
+        }
+
+        // Función para mostrar la Tabla de Símbolos (sin cambios)
+        function generarTablaDeSimbolosHTML(symbolTable) {
+            let html = `<p class="mt-2 mb-1"><strong>Tabla de Símbolos (Árbol) Generada:</strong></p><div class="table-responsive symbol-table-wrapper"><table class="table table-sm table-striped table-bordered mb-0"><thead class="table-dark sticky-top"><tr><th>Token (Campo)</th><th>Atributo (Valor)</th><th>Observaciones (Tipo)</th></tr></thead><tbody>`;
+            const labels = { 'nombre': 'Nombre', 'ubicacion': 'Ubicación', 'precio': 'Precio', 'area': 'Área', 'latitud': 'Latitud', 'longitud': 'Longitud', 'imagenes': 'Imágenes', 'servicios': 'Servicios', 'descripcion': 'Descripción' };
+            for (const key in symbolTable) {
+                if (Object.hasOwnProperty.call(symbolTable, key)) {
+                    const value = symbolTable[key]; let displayValue = value; let type = typeof value;
+                    if (value === null) { displayValue = '<em>null</em>'; type = 'Nulo'; }
+                    else if (Array.isArray(value)) { displayValue = `[${value.map(v => `'${v}'`).join(', ')}]`; type = `Array[${value.length}] (Lista)`; }
+                    else if (typeof value === 'number') { type = 'Número'; }
+                    else if (typeof value === 'string') { displayValue = `"${value}"`; type = 'Cadena'; }
+                    html += `<tr><td><strong>${labels[key] || key}</strong></td><td style="word-break: break-all;">${displayValue}</td><td>${type}</td></tr>`;
+                }
+            }
+            html += `</tbody></table></div>`; return html;
+        }
+
+        // 5. EL COMPILADOR (Analizador Léxico, Sintáctico y Semántico)
+        function compilarFormulario() {
+            clearAllErrors(); // Limpia errores y avisos viejos
+            let tablaDeSimbolos = {}; 
+            
+            // --- FASE 1: ANÁLISIS LÉXICO (Tokenización) ---
+            const tokens = [];
+            for (const id in REGLAS_GRAMATICALES) {
+                const rule = REGLAS_GRAMATICALES[id];
+                const field = document.getElementById(id);
+                if (!field) continue;
+                
+                let rawValue, tokenType, tokenValue, fieldForError = field;
+
+                if (rule.type === TOKEN_TYPES.LISTA_URL) {
+                    const urlInputs = document.querySelectorAll('.imagen-input');
+                    const urls = Array.from(urlInputs).map(input => input.value.trim()).filter(url => url !== '');
+                    tokenType = (urls.length > 0) ? TOKEN_TYPES.LISTA_URL : TOKEN_TYPES.VACIO;
+                    tokenValue = urls;
+                    fieldForError = urlInputs.length > 0 ? urlInputs[0] : field; 
+                } else if (rule.type === TOKEN_TYPES.LISTA_SERVICIOS) {
+                    const servicios = Array.from(document.querySelectorAll('.servicio-check:checked')).map(check => check.value);
+                    tokenType = (servicios.length > 0) ? TOKEN_TYPES.LISTA_SERVICIOS : TOKEN_TYPES.VACIO;
+                    tokenValue = servicios;
+                } else {
+                    rawValue = field.value.trim();
+                    if (rawValue === '') {
+                        tokenType = TOKEN_TYPES.VACIO;
+                        tokenValue = null;
+                    } else if (rule.type === TOKEN_TYPES.NUMERO) {
+                        const numValue = parseFloat(rawValue.replace(/,/g, '')); // <-- QUITA COMAS
+                        if (isNaN(numValue)) {
+                            showValidationError(field, errorMessages.INVALID_TOKEN_NUMBER(rule.label)); return null; 
+                        } else {
+                            tokenType = rule.type; tokenValue = numValue;
+                        }
+                    } else { // IDENTIFICADOR o SELECCION
+                        tokenType = rule.type; tokenValue = rawValue;
+                    }
+                }
+                tokens.push({ id: id, type: tokenType, value: tokenValue, rule: rule, field: fieldForError });
+            } // Fin del Lexer
+
+            // --- FASE 2 & 3: ANÁLISIS SINTÁCTICO Y SEMÁNTICO ---
+            for (const token of tokens) {
+                const rule = token.rule;
+                
+                if (rule.required && token.type === TOKEN_TYPES.VACIO) {
+                    const msg = (rule.type === TOKEN_TYPES.SELECCION) ? errorMessages.REQUIRED_SELECT(rule.label) : errorMessages.REQUIRED(rule.label);
+                    showValidationError(token.field, msg); return null; 
+                }
+                
+                if (rule.semantic && token.type !== TOKEN_TYPES.VACIO) {
+                    const semanticRule = rule.semantic; const value = token.value; 
+                    if (semanticRule.isPositive && value <= 0) { showValidationError(token.field, errorMessages.SEMANTIC_POSITIVE(rule.label)); return null; }
+                    if (semanticRule.range && (value < value[0] || value > value[1])) { showValidationError(token.field, errorMessages.SEMANTIC_RANGE(rule.label, semanticRule.range)); return null; }
+                    if (semanticRule.isUrlList) {
+                        for (const url of value) { 
+                            if (!url.startsWith('http://') && !url.startsWith('https://')) { showValidationError(token.field, errorMessages.SEMANTIC_URL_HTTP(rule.label, url)); return null; }
+                            const urlPattern = /\.(jpg|jpeg|png|gif|webp)$/i;
+                            if (!urlPattern.test(url)) { showValidationError(token.field, errorMessages.SEMANTIC_URL_FORMAT(rule.label, url)); return null; }
+                        }
+                    }
+                }
+
+                // Construir la Tabla de Símbolos
+                if (token.id === 'imagenes-container') { tablaDeSimbolos['imagenes'] = token.value; }
+                else if (token.id === 'servicios-container') { tablaDeSimbolos['servicios'] = token.value ? token.value.join(', ') : null; }
+                else { tablaDeSimbolos[token.id] = token.value; }
+            } // Fin Fases 2/3
+
+            return tablaDeSimbolos; // Devuelve la tabla de símbolos (árbol) si todo OK
+        }
+
+
+        // --- Lógica del Envío del Formulario (POST o PUT) ---
+        if(terrenoForm) {
+            terrenoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const datosTerreno = compilarFormulario(); // Devuelve la tabla de símbolos o null
+                
+                if (!datosTerreno) { return; } // Validación falló, error ya mostrado
+                
+                const idActual = document.getElementById('terrenoId').value;
+                
+                console.log("--- ANÁLISIS COMPLETADO: Tabla de Símbolos (Árbol) Creada ---");
+                console.log(JSON.stringify(datosTerreno, null, 2));
+
+                const arbolHtml = generarTablaDeSimbolosHTML(datosTerreno); // <-- LLAMA A LA NUEVA FUNCIÓN
+                statusMessage.className = 'mt-4 alert alert-info'; // Azul (Información)
+                statusMessage.innerHTML = `<strong>Análisis Exitoso:</strong><p class="mt-2 mb-1">Enviando al backend...</p>${arbolHtml}`;
+
+                submitButton.disabled = true;
+                submitIcon.className = 'spinner-border spinner-border-sm me-2';
+                submitText.textContent = modoEdicion ? "Guardando..." : "Guardando...";
+
+                const apiUrl = modoEdicion ? `http://localhost:3000/api/terrenos/${idActual}` : 'http://localhost:3000/api/terrenos';
+                const method = modoEdicion ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(apiUrl, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datosTerreno) });
+                    if (!response.ok) { let errorMsg = `Error ${response.status}: ${response.statusText}`; try { const errorData = await response.json(); if (errorData && errorData.error) { errorMsg += ` - ${errorData.error}`; } } catch (jsonError) {} throw new Error(errorMsg); }
+                    const resultado = await response.json();
+                    const exitoMsg = modoEdicion ? `¡Cambios guardados!` : `¡Terreno guardado! ID: ${resultado.id}`;
+
+                    const arbolHtmlExito = generarTablaDeSimbolosHTML(datosTerreno);
+                    if(statusMessage){ 
+                        statusMessage.className = 'mt-4 alert alert-success'; 
+                        statusMessage.innerHTML = `<strong>${exitoMsg}</strong><p class="mt-2 mb-1"><strong>Datos (Tabla de Símbolos) enviados:</strong></p>${arbolHtmlExito}`; 
+                    }
+
+                    if (!modoEdicion) { 
+                        terrenoForm.reset(); 
+                        imagenesContainer.innerHTML = ''; 
+                        addImagenInput(); 
+                        document.querySelectorAll('.servicio-check').forEach(check => check.checked = false); 
+                    }
+                    if (modoEdicion && pageTitle) { pageTitle.textContent = `Editando: ${resultado.nombre}`; }
+
+                } catch (error) {
+                    console.error('Error al guardar:', error);
+                     statusMessage.className = 'mt-4 alert alert-danger d-flex align-items-center';
+                     statusMessage.innerHTML = `<img src="imagenes teko/ajolote.gif" alt="Teko" class="alert-teko-img"><div><strong>Error de Red/Servidor:</strong><br>${error.message}</div>`;
+                } finally {
+                     submitButton.disabled = false;
+                     submitIcon.className = modoEdicion ? 'bi bi-save-fill me-2' : 'bi bi-cloud-arrow-up-fill me-2';
+                     submitText.textContent = modoEdicion ? "Guardar Cambios" : "Guardar Terreno";
+                }
+            });
+        } // Fin if(terrenoForm)
+        
+    });
+    </script>
+</body>
 </html>

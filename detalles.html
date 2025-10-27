@@ -207,7 +207,7 @@
             <div class="card p-3 mt-4" id="detalles-card"> 
                 <p><strong>Precio:</strong> <span id="terreno-precio">$${terreno.precio ? terreno.precio.toLocaleString('es-MX') : 'N/D'} MXN</span></p>
 
-                <p><strong>Área:</strong> <span id="terreno-area">${terreno.tamanio_m2 || 'N/D'} m²</span></p>
+               <p><strong>Área:</strong> <span id="terreno-area">${terreno.area ? `${terreno.area} m²` : 'N/D'}</span></p>
 
                 <p><strong>Servicios:</strong> <span id="terreno-servicios">${terreno.servicios || 'N/D'}</span></p>
                 
